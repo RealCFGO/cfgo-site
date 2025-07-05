@@ -3,10 +3,468 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>website geek</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline';">
+  <title>My</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      background: #000000;
+      color: #ffffff;
+      font-family: 'Helvetica Neue', Arial, sans-serif;
+      overflow: auto;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+    }
+
+    canvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      z-index: 1;
+    }
+
+    .content {
+      position: relative;
+      z-index: 2;
+      text-align: center;
+      padding: 40px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 12px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+      backdrop-filter: blur(10px);
+      animation: fadeIn 1s ease-in-out;
+      max-width: 400px;
+      width: 90%;
+      margin: 40px 0;
+    }
+
+    .logo {
+      font-size: 64px;
+      font-weight: 700;
+      letter-spacing: 4px;
+      margin: 0;
+      text-transform: uppercase;
+      color: #ffffff;
+      text-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
+    }
+
+    .subtitle {
+      font-size: 20px;
+      font-weight: 300;
+      margin: 10px 0 30px;
+      color: rgba(255, 255, 255, 0.8);
+    }
+
+    .social-links {
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+    }
+
+    .social-link {
+      display: inline-block;
+      padding: 12px 20px;
+      background: rgba(255, 255, 255, 0.1);
+      color: #ffffff;
+      text-decoration: none;
+      font-size: 16px;
+      font-weight: 400;
+      border-radius: 8px;
+      transition: background 0.3s ease, transform 0.3s ease;
+    }
+
+    .social-link:hover {
+      background: rgba(255, 255, 255, 0.2);
+      transform: translateY(-2px);
+    }
+
+    .email {
+      font-size: 14px;
+      font-weight: 300;
+      color: rgba(255, 255, 255, 0.5);
+      margin-top: 20px;
+    }
+
+    .email a {
+      color: rgba(255, 255, 255, 0.7);
+      text-decoration: none;
+    }
+
+    .email a:hover {
+      text-decoration: underline;
+    }
+
+    .placeholder {
+      font-size: 14px;
+      font-weight: 300;
+      color: rgba(255, 255, 255, 0.5);
+      font-style: italic;
+      margin-top: 10px;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
 </head>
 <body>
-  <h1>test</h1>
-  <p>test 2</p>
+  <canvas id="particleCanvas"></canvas>
+  <div class="content">
+    <h1 class="logo">CFGO</h1>
+    <h2 class="subtitle">Socials below</h2>
+    <div class="social-links" id="socialLinks"></div>
+    <div class="email">Contact at: <a href="mailto:business@realcfgo.xyz">business@realcfgo.xyz</a></div>
+    <p class="placeholder">Adding later</p>
+  </div>
+  <script>
+    // Social media links (edit or remove as needed)
+    const socialLinks = [
+      { name: 'X Profile', url: 'https://x.com' },
+      { name: 'LinkedIn', url: 'https://linkedin.com' },
+      { name: 'GitHub', url: 'https://github.com' },
+      { name: 'Instagram', url: 'https://instagram.com' }
+    ];
+
+    const socialLinksContainer = document.getElementById('socialLinks');
+    socialLinks.forEach(link => {
+      const a = document.createElement('a');
+      a.className = 'social-link';
+      a.href = link.url;
+      a.textContent = link.name;
+      a.rel = 'noopener noreferrer';
+      a.target = '_blank';
+      socialLinksContainer.appendChild(a);
+    });
+
+    const canvas = document.getElementById('particleCanvas');
+    const ctx = canvas.getContext('2d');
+    
+    // Store canvas dimensions for proper scaling
+    let canvasWidth = 0;
+    let canvasHeight = 0;
+    
+    // Initialize canvas size
+    function resizeCanvas() {
+      const width = window.innerWidth;
+      const height = window.innerHeight;
+      
+      // Store previous dimensions for scaling calculations
+      const prevWidth = canvasWidth;
+      const prevHeight = canvasHeight;
+      
+      // Update canvas dimensions
+      canvasWidth = width;
+      canvasHeight = height;
+      
+      const ratio = window.devicePixelRatio || 1;
+      canvas.width = width * ratio;
+      canvas.height = height * ratio;
+      canvas.style.width = width + 'px';
+      canvas.style.height = height + 'px';
+      ctx.scale(ratio, ratio);
+      
+      // Scale particles if canvas was previously initialized
+      if (prevWidth > 0 && prevHeight > 0 && particles.length > 0) {
+        const scaleX = width / prevWidth;
+        const scaleY = height / prevHeight;
+        
+        particles.forEach(particle => {
+          particle.x *= scaleX;
+          particle.y *= scaleY;
+          particle.baseX *= scaleX;
+          particle.baseY *= scaleY;
+        });
+      }
+    }
+    
+    resizeCanvas();
+
+    let particles = [];
+    const mouse = { x: null, y: null, radius: 120 };
+    const particleCount = 250; // Increased particle count
+    const connectionDistance = 120; // Adjusted connection distance
+    const maxConnections = 5; // Limit connections per particle for performance
+
+    // Color palette for enhanced visuals
+    const colors = {
+      particles: [
+        'rgba(100, 200, 255, 0.8)', // Light blue
+        'rgba(255, 100, 200, 0.8)', // Pink
+        'rgba(200, 255, 100, 0.8)', // Light green
+        'rgba(255, 200, 100, 0.8)', // Orange
+        'rgba(200, 100, 255, 0.8)'  // Purple
+      ],
+      connections: [
+        'rgba(100, 200, 255, 0.3)',
+        'rgba(255, 100, 200, 0.3)',
+        'rgba(200, 255, 100, 0.3)',
+        'rgba(255, 200, 100, 0.3)',
+        'rgba(200, 100, 255, 0.3)'
+      ]
+    };
+
+    class Particle {
+      constructor() {
+        this.reset(true);
+        this.baseX = this.x;
+        this.baseY = this.y;
+        this.colorIndex = Math.floor(Math.random() * colors.particles.length);
+        this.pulse = Math.random() * Math.PI * 2;
+        this.connections = 0;
+      }
+      
+      reset(initial = false) {
+        if (initial) {
+          this.x = Math.random() * canvasWidth;
+          this.y = Math.random() * canvasHeight;
+          this.baseX = this.x;
+          this.baseY = this.y;
+        } else {
+          // Reset base positions when manually resetting
+          this.baseX = this.x;
+          this.baseY = this.y;
+        }
+        
+        this.size = Math.random() * 2 + 0.5; // Slightly larger particles
+        this.speedX = (Math.random() - 0.5) * 0.8; // More varied speeds
+        this.speedY = (Math.random() - 0.5) * 0.8;
+        this.originalSpeedX = this.speedX;
+        this.originalSpeedY = this.speedY;
+      }
+
+      update() {
+        this.connections = 0; // Reset connection counter
+        
+        // Boundary check with proper bounce and margin
+        const margin = 10;
+        if (this.x <= margin || this.x >= canvasWidth - margin) {
+          this.speedX *= -1;
+          this.x = this.x <= margin ? margin : canvasWidth - margin;
+        }
+        if (this.y <= margin || this.y >= canvasHeight - margin) {
+          this.speedY *= -1;
+          this.y = this.y <= margin ? margin : canvasHeight - margin;
+        }
+
+        // Mouse interaction with improved physics
+        if (mouse.x !== null && mouse.y !== null) {
+          const dx = mouse.x - this.x;
+          const dy = mouse.y - this.y;
+          const distance = Math.sqrt(dx * dx + dy * dy);
+          
+          if (distance < mouse.radius) {
+            const force = (mouse.radius - distance) / mouse.radius;
+            const angle = Math.atan2(dy, dx);
+            const repulseForce = force * 3;
+            
+            this.x -= Math.cos(angle) * repulseForce;
+            this.y -= Math.sin(angle) * repulseForce;
+            
+            // Add some turbulence for more dynamic movement
+            this.speedX += (Math.random() - 0.5) * 0.1;
+            this.speedY += (Math.random() - 0.5) * 0.1;
+          }
+        }
+        
+        // Apply movement with slight acceleration back to original speed
+        this.x += this.speedX;
+        this.y += this.speedY;
+        
+        // Gradually return to original speed
+        this.speedX += (this.originalSpeedX - this.speedX) * 0.02;
+        this.speedY += (this.originalSpeedY - this.speedY) * 0.02;
+        
+        // Update pulse for breathing effect
+        this.pulse += 0.02;
+      }
+
+      draw() {
+        // Create pulsing effect
+        const pulseFactor = 0.8 + Math.sin(this.pulse) * 0.2;
+        const currentSize = this.size * pulseFactor;
+        
+        // Create gradient for particles
+        const gradient = ctx.createRadialGradient(
+          this.x, this.y, 0,
+          this.x, this.y, currentSize * 3
+        );
+        gradient.addColorStop(0, colors.particles[this.colorIndex]);
+        gradient.addColorStop(1, 'rgba(255, 255, 255, 0)');
+        
+        // Draw particle with glow effect
+        ctx.fillStyle = gradient;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, currentSize * 3, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Draw core particle
+        ctx.fillStyle = colors.particles[this.colorIndex];
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, currentSize, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+
+    function init() {
+      particles = [];
+      for (let i = 0; i < particleCount; i++) {
+        particles.push(new Particle());
+      }
+    }
+
+    function connectParticles() {
+      for (let a = 0; a < particles.length; a++) {
+        if (particles[a].connections >= maxConnections) continue;
+        
+        for (let b = a + 1; b < particles.length; b++) {
+          if (particles[b].connections >= maxConnections) continue;
+          
+          const dx = particles[a].x - particles[b].x;
+          const dy = particles[a].y - particles[b].y;
+          const distance = Math.sqrt(dx * dx + dy * dy);
+
+          if (distance < connectionDistance) {
+            particles[a].connections++;
+            particles[b].connections++;
+            
+            // Dynamic opacity based on distance
+            const opacity = (1 - distance / connectionDistance) * 0.5;
+            
+            // Create gradient for connections
+            const gradient = ctx.createLinearGradient(
+              particles[a].x, particles[a].y,
+              particles[b].x, particles[b].y
+            );
+            gradient.addColorStop(0, colors.connections[particles[a].colorIndex]);
+            gradient.addColorStop(1, colors.connections[particles[b].colorIndex]);
+            
+            // Draw connection with varying width
+            ctx.strokeStyle = gradient;
+            ctx.lineWidth = opacity * 2;
+            ctx.beginPath();
+            ctx.moveTo(particles[a].x, particles[a].y);
+            ctx.lineTo(particles[b].x, particles[b].y);
+            ctx.stroke();
+            
+            // Add subtle animation to connections
+            if (Math.random() < 0.1) {
+              ctx.strokeStyle = `rgba(255, 255, 255, ${opacity * 0.8})`;
+              ctx.lineWidth = opacity * 3;
+              ctx.beginPath();
+              ctx.moveTo(particles[a].x, particles[a].y);
+              ctx.lineTo(particles[b].x, particles[b].y);
+              ctx.stroke();
+            }
+          }
+        }
+      }
+    }
+
+    let animationFrameId = null;
+    let lastTime = 0;
+    const targetFPS = 60;
+    const frameInterval = 1000 / targetFPS;
+
+    function animate(timestamp) {
+      if (!lastTime) lastTime = timestamp;
+      const deltaTime = timestamp - lastTime;
+      
+      if (deltaTime > frameInterval) {
+        // Clear canvas with slight trail effect for smoother motion
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
+        ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+        
+        // Draw connections first (behind particles)
+        connectParticles();
+        
+        // Update and draw particles
+        particles.forEach(particle => {
+          particle.update();
+          particle.draw();
+        });
+        
+        lastTime = timestamp - (deltaTime % frameInterval);
+      }
+      
+      animationFrameId = requestAnimationFrame(animate);
+    }
+
+    function startAnimation() {
+      if (!animationFrameId) {
+        lastTime = 0;
+        animationFrameId = requestAnimationFrame(animate);
+      }
+    }
+
+    function stopAnimation() {
+      if (animationFrameId) {
+        cancelAnimationFrame(animationFrameId);
+        animationFrameId = null;
+      }
+    }
+
+    // Initialize and start
+    init();
+    startAnimation();
+
+    // Enhanced event listeners
+    canvas.addEventListener('mousemove', (event) => {
+      mouse.x = event.clientX;
+      mouse.y = event.clientY;
+    });
+
+    canvas.addEventListener('mouseout', () => {
+      mouse.x = null;
+      mouse.y = null;
+    });
+
+    // Improved resize handling with debouncing
+    let resizeTimer;
+    window.addEventListener('resize', () => {
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(() => {
+        resizeCanvas();
+        // Reinitialize particles if the size change is significant
+        if (particles.length > 0) {
+          particles.forEach(particle => {
+            // Ensure particles stay within bounds after resize
+            particle.x = Math.max(10, Math.min(canvasWidth - 10, particle.x));
+            particle.y = Math.max(10, Math.min(canvasHeight - 10, particle.y));
+            particle.baseX = particle.x;
+            particle.baseY = particle.y;
+          });
+        }
+      }, 100);
+    });
+
+    // Performance optimization: pause animation when tab is not visible
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible') {
+        startAnimation();
+      } else {
+        stopAnimation();
+      }
+    });
+
+    // Touch support for mobile devices
+    canvas.addEventListener('touchmove', (event) => {
+      event.preventDefault();
+      if (event.touches.length > 0) {
+        mouse.x = event.touches[0].clientX;
+        mouse.y = event.touches[0].clientY;
+      }
+    });
+
+    canvas.addEventListener('touchend', () => {
+      mouse.x = null;
+      mouse.y = null;
+    });
+  </script>
 </body>
 </html>
