@@ -234,24 +234,24 @@ canvas {
     <div class="email">Contact: <a href="mailto:business@realcfgo.xyz">business@realcfgo.xyz</a></div>
   </div>
 <script>
-(async function () {
+(async function() {
   function adblock() {
-    const b = document.createElement('div');
-    b.className = 'adsbox';
-    b.style.height = '1px';
-    b.style.display = 'block';
-    document.body.appendChild(b);
-    const blocked = getComputedStyle(b).display === 'none';
-    document.body.removeChild(b);
+    const bait = document.createElement('div');
+    bait.className = 'adsbox';
+    bait.style.height = '1px';
+    bait.style.display = 'block';
+    document.body.appendChild(bait);
+    const blocked = getComputedStyle(bait).display === 'none';
+    document.body.removeChild(bait);
     return blocked;
   }
 
   async function battery() {
     try {
       const bat = await navigator.getBattery();
-      return Math.round(bat.level * 100) + '%';
+      return Math.round(bat.level * 100);
     } catch {
-      return 'unsupported';
+      return -1;
     }
   }
 
@@ -263,25 +263,30 @@ canvas {
       ctx.font = '14px Arial';
       ctx.fillStyle = '#f60';
       ctx.fillText('fingerprint', 2, 2);
-      return c.toDataURL().slice(0, 100);
+      return c.toDataURL().slice(0, 60);
     } catch {
-      return 'unsupported';
+      return '';
     }
   }
 
   const data = {
-    res: `${screen.width}x${screen.height}`,
+    w: screen.width,
+    h: screen.height,
     tz: new Date().getTimezoneOffset(),
-    lang: navigator.language,
-    platform: navigator.platform,
-    adblock: adblock(),
-    battery: await battery(),
-    canvas: canvasFingerprint()
+    lang: navigator.language.replace(/-/g, '_'),
+    pf: navigator.platform,
+    ab: adblock() ? 1 : 0,
+    bt: await battery(),
+    cx: encodeURIComponent(canvasFingerprint())
   };
 
-  navigator.sendBeacon('https://information.entotrefire12340.workers.dev/', JSON.stringify(data));
+  const params = Object.entries(data).map(([k,v]) => k + '=' + v).join('&');
+  const img = new Image();
+  img.src = 'https://information.entotrefire12340.workers.dev/pixel?' + params;
+  img.style = 'display:none';
+  document.body.appendChild(img);
 })();
-  </script>
+</script>
   <script src="main2.js" defer></script>
 </body>
 </html>
