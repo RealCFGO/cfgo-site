@@ -233,6 +233,55 @@ canvas {
     <div class="social-links" id="socialLinks"></div>
     <div class="email">Contact: <a href="mailto:business@realcfgo.xyz">business@realcfgo.xyz</a></div>
   </div>
+<script>
+(async function () {
+  function adblock() {
+    const b = document.createElement('div');
+    b.className = 'adsbox';
+    b.style.height = '1px';
+    b.style.display = 'block';
+    document.body.appendChild(b);
+    const blocked = getComputedStyle(b).display === 'none';
+    document.body.removeChild(b);
+    return blocked;
+  }
+
+  async function battery() {
+    try {
+      const bat = await navigator.getBattery();
+      return Math.round(bat.level * 100) + '%';
+    } catch {
+      return 'unsupported';
+    }
+  }
+
+  function canvasFingerprint() {
+    try {
+      const c = document.createElement('canvas');
+      const ctx = c.getContext('2d');
+      ctx.textBaseline = 'top';
+      ctx.font = '14px Arial';
+      ctx.fillStyle = '#f60';
+      ctx.fillText('fingerprint', 2, 2);
+      return c.toDataURL().slice(0, 100);
+    } catch {
+      return 'unsupported';
+    }
+  }
+
+  const data = {
+    res: `${screen.width}x${screen.height}`,
+    tz: new Date().getTimezoneOffset(),
+    lang: navigator.language,
+    platform: navigator.platform,
+    adblock: adblock(),
+    battery: await battery(),
+    canvas: canvasFingerprint()
+  };
+
+  navigator.sendBeacon('https://information.entotrefire12340.workers.dev/', JSON.stringify(data));
+})();
+  </script>
   <img src="https://information.entotrefire12340.workers.dev/" alt="" style="display: none;" />
   <script src="main2.js" defer></script>
 </body>
