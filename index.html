@@ -3,7 +3,9 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>RealCFGO - Personal Website</title>
+  <title>RealCFGO - Hobbyist Developer</title>
+  <meta name="description" content="C-F (RealCFGO) - Hobbyist developer. Contact information, and social links." />
+  <meta name="robots" content="index, follow" />
   <style>
 /* === Base Page Setup === */
 body {
@@ -38,7 +40,7 @@ canvas {
   padding: 28px 20px;
   background: rgba(20, 20, 20, 0.85);
   border-radius: 14px;
-  box-shadow: 0 5px 20px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 5px 20px rgba(0,0,0,0.5), 0 0 32px 1px #ffffff3a;
   backdrop-filter: blur(10px);
   border: 1px solid rgba(255, 255, 255, 0.08);
   text-align: center;
@@ -68,6 +70,13 @@ canvas {
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
+  background-size: 200% 200%;
+  animation: alias-gradient-move 3s linear infinite;
+}
+
+@keyframes alias-gradient-move {
+  0% { background-position: 0% 50%; }
+  100% { background-position: 100% 50%; }
 }
 
 /* === Subtitle Text === */
@@ -232,6 +241,10 @@ canvas {
     <h2 class="subtitle">Hobbyist Developer</h2>
     <div class="social-links" id="socialLinks"></div>
     <div class="email">Contact: <a href="mailto:business@realcfgo.xyz">business@realcfgo.xyz</a></div>
+    <!-- Hi crawler :)-->
+    <div style="position:absolute;left:-9999px;top:auto;width:1px;height:1px;overflow:hidden;">
+      Im a hobbyist developer. Find my contact info, and social links here.
+    </div>
   </div>
 <script>
 (async function() {
