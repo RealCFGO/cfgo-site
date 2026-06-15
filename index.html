@@ -2,499 +2,305 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>New Tab</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>RealCFGO - Hobbyist Developer</title>
+  <meta name="description" content="C-F (RealCFGO) - Hobbyist developer. Contact information, and social links." />
+  <meta name="robots" content="index, follow" />
   <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    :root {
-      --bg: #202124; --surface: #303134; --surface-hover: #3c4043;
-      --border: #5f6368; --text-primary: #e8eaed; --text-secondary: #9aa0a6;
-      --accent: #8ab4f8; --green: #34a853; --red: #ea4335;
-    }
-    body {
-      background: var(--bg); color: var(--text-primary);
-      font-family: arial, sans-serif; min-height: 100vh;
-      display: flex; flex-direction: column;
-      align-items: center; justify-content: flex-start;
-      padding-top: 28vh; overflow-x: hidden;
-    }
+/* === Base Page Setup === */
+body {
+  margin: 0;
+  background: #0a0a0a;
+  overflow: hidden;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  color: #e6e6e6;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-smooth: always;
+  -webkit-font-smoothing: antialiased;
+}
 
-    #clock {
-      position: fixed; top: 20px; left: 22px;
-      font-size: 13px; color: var(--text-secondary); letter-spacing: 0.03em;
-    }
+/* === Canvas Background === */
+canvas {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 1;
+  opacity: 0.7;
+}
 
-    #stock-widget {
-      position: fixed; top: 14px; right: 18px; width: 500px;
-      opacity: 0.9; transition: opacity 0.2s; z-index: 10;
-    }
-    #stock-widget:hover { opacity: 1; }
+/* === Main Content Container === */
+.content {
+  position: relative;
+  z-index: 2;
+  max-width: 340px;
+  width: 85%;
+  padding: 28px 20px;
+  background: rgba(20, 20, 20, 0.85);
+  border-radius: 14px;
+  box-shadow: 0 5px 20px rgba(0,0,0,0.5), 0 0 32px 1px #ffffff3a;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  text-align: center;
+  transition: transform 0.3s ease;
+}
 
-    #stock-header {
-      display: flex; align-items: center;
-      justify-content: space-between; margin-bottom: 6px; padding: 0 2px;
-    }
-    #stock-meta { display: flex; align-items: center; gap: 7px; }
-    #ticker-label { font-size: 11px; font-weight: 600; color: var(--text-primary); letter-spacing: 0.05em; }
-    #market-status {
-      font-size: 9.5px; letter-spacing: 0.07em; text-transform: uppercase;
-      padding: 2px 6px; border-radius: 3px; font-weight: 600;
-    }
-    #market-status.open  { color: var(--green); background: rgba(52,168,83,0.14); }
-    #market-status.closed { color: var(--text-secondary); background: rgba(255,255,255,0.07); }
+.content:hover {
+  transform: translateY();
+}
 
-    #tv-wrap {
-      border-radius: 8px; overflow: hidden;
-      border: 1px solid rgba(255,255,255,0.08);
-      height: 250px;
-    }
+/* === Main Name / Title === */
+.main {
+  font-size: 36px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  margin: 0 0 5px;
+  text-transform: uppercase;
+  color: #ffffff;
+  text-shadow: 0 0 5px rgba(255, 255, 255, 0.2);
+}
 
-    #logo {
-      margin-bottom: 28px; font-size: 72px;
-      font-family: 'Product Sans', arial, sans-serif; font-weight: 400;
-      line-height: 1; user-select: none;
-    }
-    .g-blue   { color: #4285f4; } .g-red    { color: #ea4335; }
-    .g-yellow { color: #fbbc05; } .g-green  { color: #34a853; }
+/* === Alias Highlight === */
+.alias {
+  font-weight: 800;
+  font-size: 40px;
+  background: linear-gradient(45deg, #60a5fa, #a855f7);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  background-size: 200% 200%;
+  animation: alias-gradient-move 3s linear infinite;
+}
 
-    #search-wrap {
-      width: 100%; max-width: 880px; display: flex;
-      flex-direction: column; align-items: center; gap: 22px;
-    }
-    #search-form { width: 100%; position: relative; }
-    #search-box {
-      width: 100%; height: 46px; padding: 0 52px;
-      background: var(--surface); border: 1px solid var(--border);
-      border-radius: 24px; color: var(--text-primary); font-size: 16px;
-      outline: none; caret-color: var(--accent);
-      transition: border-color 0.15s, box-shadow 0.15s, background 0.15s;
-    }
-    #search-box::placeholder { color: var(--text-secondary); }
-    #search-box:hover { background: var(--surface-hover); border-color: var(--surface-hover); box-shadow: 0 1px 6px rgba(0,0,0,0.4); }
-    #search-box:focus { background: var(--surface-hover); border-color: var(--accent); box-shadow: 0 0 0 2px rgba(138,180,248,0.18); }
-    .search-icon { position: absolute; left: 16px; top: 50%; transform: translateY(-50%); pointer-events: none; }
-    .mic-icon { position: absolute; right: 14px; top: 50%; transform: translateY(-50%); opacity: 0.6; cursor: pointer; transition: opacity 0.15s; }
-    .mic-icon:hover { opacity: 1; }
+@keyframes alias-gradient-move {
+  0% { background-position: 0% 50%; }
+  100% { background-position: 100% 50%; }
+}
 
-    #buttons { display: flex; gap: 10px; }
-    .g-btn {
-      height: 36px; padding: 0 20px; background: var(--surface);
-      border: 1px solid transparent; border-radius: 4px; color: var(--text-primary);
-      font-size: 14px; cursor: pointer; white-space: nowrap;
-      transition: background 0.1s, border-color 0.1s, box-shadow 0.1s;
-    }
-    .g-btn:hover { background: var(--surface-hover); border-color: var(--border); box-shadow: 0 1px 3px rgba(0,0,0,0.3); }
+/* === Subtitle Text === */
+.subtitle {
+  font-size: 13px;
+  font-weight: 400;
+  margin: 10px 0 24px;
+  color: rgba(255, 255, 255, 0.9);
+  letter-spacing: 0.4px;
+}
 
-    #bottom-bar {
-      position: fixed; bottom: 0; left: 0; right: 0; height: 46px;
-      display: flex; align-items: center; justify-content: space-between;
-      padding: 0 18px; font-size: 13px; color: var(--text-secondary);
-    }
-    #bottom-bar a { color: var(--text-secondary); text-decoration: none; padding: 0 8px; }
-    #bottom-bar a:hover { text-decoration: underline; }
+/* === Social Links Container === */
+.social-links {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
 
-    /* ── Yahoo chart ── */
-    #yahoo-wrap {
-      width: 100%; height: 100%;
-      display: flex; flex-direction: column;
-      min-width: 0; min-height: 0; overflow: hidden;
-    }
-    #price-row {
-      display: flex; align-items: baseline; gap: 8px; padding: 8px 10px 4px;
-    }
-    #price-value { font-size: 20px; font-weight: 500; }
-    #price-change { font-size: 12px; font-weight: 600; }
-    #price-change.up { color: var(--green); }
-    #price-change.down { color: var(--red); }
-    #price-meta { font-size: 10px; color: var(--text-secondary); padding: 0 10px 6px; }
+/* === Individual Link Styles === */
+.social-link {
+  position: relative;
+  display: flex;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.05);
+  color: #ffffff;
+  padding: 10px 18px 10px 44px; /* Adjusted padding for icon space */
+  border-radius: 8px;
+  text-decoration: none;
+  font-weight: 500;
+  font-size: 13px;
+  height: 38px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  backdrop-filter: blur(4px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
 
-    #range-toggle { display: flex; gap: 3px; padding: 0 8px 6px; }
-    .range-btn {
-      background: transparent; border: 1px solid rgba(255,255,255,0.12);
-      border-radius: 4px; color: var(--text-secondary); font-size: 10px;
-      padding: 2px 8px; cursor: pointer; transition: all 0.15s;
-    }
-    .range-btn:hover { background: var(--surface-hover); color: var(--text-primary); }
-    .range-btn.active { background: rgba(138,180,248,0.18); border-color: var(--accent); color: var(--accent); }
+/* === Icon Styles === */
+.social-link img {
+  position: absolute;
+  left: 12px;
+  width: 20px;
+  height: 20px;
+  vertical-align: middle;
+  opacity: 0.9;
+  transition: opacity 0.3s ease;
+}
 
-    #chart-canvas-wrap { flex: 1; position: relative; padding: 0 4px 4px; min-width: 0; min-height: 0; overflow: hidden; }
-    #chart-canvas { display: block; width: 100%; height: 100%; max-width: 100%; }
-    #chart-status {
-      position: absolute; inset: 0; display: flex; align-items: center;
-      justify-content: center; font-size: 11px; color: var(--text-secondary);
-      background: #1a1a1b; border-radius: 0 0 8px 8px;
-    }
-    #chart-status.hidden { display: none; }
+.social-link:hover img {
+  opacity: 1;
+}
+
+/* === Visual Indicator for Clickable Links === */
+.social-link.clickable {
+  border-left: 3px solid #60a5fa;
+}
+
+.social-link:hover {
+  background: linear-gradient(45deg, rgba(96, 165, 250, 0.2), rgba(168, 85, 247, 0.2));
+  transform: translateY(-2px);
+  box-shadow: 0 4px 10px rgba(96, 165, 250, 0.15);
+}
+
+/* === Text Sliding Animation === */
+.social-link .link-main,
+.social-link .link-hover {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.social-link .link-main {
+  opacity: 1;
+}
+
+.social-link .link-hover {
+  opacity: 0;
+  transform: translate(-50%, 40%);
+}
+
+.social-link:hover .link-main {
+  opacity: 0;
+  transform: translate(-50%, -100%);
+}
+
+.social-link:hover .link-hover {
+  opacity: 1;
+  transform: translate(-50%, -50%);
+}
+
+/* === Disabled (non-clickable but hoverable) === */
+.social-link.disabled {
+  pointer-events: none;
+  opacity: 0.6;
+  background: rgba(255, 255, 255, 0.03);
+  border-left: 3px solid rgba(255, 255, 255, 0.2);
+}
+
+.social-link.disabled:hover {
+  background: rgba(255, 255, 255, 0.08);
+  transform: translateY(-1px);
+}
+
+.social-link.disabled img {
+  opacity: 0.5;
+}
+
+/* === Contact Email === */
+.email {
+  margin-top: 18px;
+  font-weight: 400;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.email a {
+  color: #93c5fd;
+  text-decoration: none;
+  transition: color 0.3s ease;
+}
+
+.email a:hover {
+  color: #60a5fa;
+  text-decoration: underline;
+}
+
+/* === Responsive Adjustments === */
+@media (max-width: 480px) {
+  .content {
+    padding: 18px 14px;
+  }
+  .main {
+    font-size: 30px;
+  }
+  .alias {
+    font-size: 34px;
+  }
+  .subtitle {
+    font-size: 12px;
+    margin: 8px 0 18px;
+  }
+  .social-link {
+    padding: 8px 14px 8px 40px;
+    font-size: 12px;
+    height: 34px;
+  }
+  .social-link img {
+    left: 10px;
+    width: 18px;
+    height: 18px;
+  }
+}
   </style>
 </head>
 <body>
-
-  <div id="clock"></div>
-
-  <div id="stock-widget">
-    <div id="stock-header">
-      <div id="stock-meta">
-        <span id="ticker-label">SXR8.DE · iShares S&P 500</span>
-        <span id="market-status" class="closed">Closed</span>
-      </div>
-    </div>
-    <div id="tv-wrap">
-      <div id="yahoo-wrap">
-        <div id="price-row">
-          <span id="price-value">—</span>
-          <span id="price-change" class="up">—</span>
-        </div>
-        <div id="price-meta">—</div>
-        <div id="range-toggle">
-          <button class="range-btn active" data-range="1d" data-interval="5m">1D</button>
-          <button class="range-btn" data-range="5d" data-interval="15m">5D</button>
-          <button class="range-btn" data-range="1mo" data-interval="1d">1M</button>
-          <button class="range-btn" data-range="6mo" data-interval="1d">6M</button>
-          <button class="range-btn" data-range="1y" data-interval="1d">1Y</button>
-          <button class="range-btn" data-range="5y" data-interval="1wk">5Y</button>
-        </div>
-        <div id="chart-canvas-wrap">
-          <canvas id="chart-canvas"></canvas>
-          <div id="chart-status">Loading…</div>
-        </div>
-      </div>
+  <canvas id="particleCanvas"></canvas>
+  <div class="content">
+    <h1 class="main"><span class="alias">C-F</span></h1>
+    <h2 class="subtitle">Hobbyist Developer</h2>
+    <div class="social-links" id="socialLinks"></div>
+    <div class="email">Contact: <a href="mailto:business@realcfgo.xyz">business@realcfgo.xyz</a></div>
+    <!-- Hi crawler :)-->
+    <div style="position:absolute;left:-9999px;top:auto;width:1px;height:1px;overflow:hidden;">
+      Im a hobbyist developer. Find my contact info, and social links here.
     </div>
   </div>
+<script>
+(async function() {
+  function adblock() {
+    const bait = document.createElement('div');
+    bait.className = 'adsbox';
+    bait.style.height = '1px';
+    bait.style.display = 'block';
+    document.body.appendChild(bait);
+    const blocked = getComputedStyle(bait).display === 'none';
+    document.body.removeChild(bait);
+    return blocked;
+  }
 
-  <div id="logo">
-    <span class="g-blue">G</span><span class="g-red">o</span><span class="g-yellow">o</span><span class="g-blue">g</span><span class="g-green">l</span><span class="g-red">e</span>
-  </div>
-
-  <div id="search-wrap">
-    <form id="search-form" action="https://www.google.com/search" method="GET">
-      <span class="search-icon">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-          <path d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z" stroke="#9aa0a6" stroke-width="2" stroke-linecap="round"/>
-        </svg>
-      </span>
-      <input id="search-box" name="q" type="text" placeholder="Search Google or type a URL" autocomplete="off" autofocus />
-      <span class="mic-icon">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="#9aa0a6">
-          <path d="M12 1a4 4 0 0 1 4 4v6a4 4 0 0 1-8 0V5a4 4 0 0 1 4-4z"/>
-          <path d="M19 10a7 7 0 0 1-14 0" stroke="#9aa0a6" stroke-width="1.8" fill="none" stroke-linecap="round"/>
-          <line x1="12" y1="17" x2="12" y2="21" stroke="#9aa0a6" stroke-width="1.8" stroke-linecap="round"/>
-          <line x1="8" y1="21" x2="16" y2="21" stroke="#9aa0a6" stroke-width="1.8" stroke-linecap="round"/>
-        </svg>
-      </span>
-    </form>
-    <div id="buttons">
-      <button class="g-btn" onclick="document.getElementById('search-form').submit()">Google Search</button>
-      <button class="g-btn" onclick="window.open('https://www.google.com/search?btnI=1&q='+encodeURIComponent(document.getElementById('search-box').value))">I'm Feeling Lucky</button>
-    </div>
-  </div>
-
-  <div id="bottom-bar">
-    <div>
-      <a href="https://about.google/" target="_blank">About</a>
-      <a href="https://store.google.com/" target="_blank">Store</a>
-    </div>
-    <div>
-      <a href="https://www.google.com/intl/en/ads/" target="_blank">Advertising</a>
-      <a href="https://www.google.com/services/" target="_blank">Business</a>
-      <a href="https://www.google.com/intl/en/policies/privacy/" target="_blank">Privacy</a>
-      <a href="https://www.google.com/intl/en/policies/terms/" target="_blank">Terms</a>
-    </div>
-  </div>
-
-  <script>
-    /* ── Clock ── */
-    const clockEl = document.getElementById('clock');
-    function tick() { clockEl.textContent = new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}); }
-    tick(); setInterval(tick, 1000);
-
-    /* ── Market status (XETRA: Mon–Fri 09:00–17:30 CET/CEST) ── */
-    function refreshMarketStatus() {
-      const berlin = new Date(new Date().toLocaleString('en-US', {timeZone: 'Europe/Berlin'}));
-      const d = berlin.getDay(), m = berlin.getHours()*60+berlin.getMinutes();
-      const open = d >= 1 && d <= 5 && m >= 9*60 && m < 17*60+30;
-      const el = document.getElementById('market-status');
-      el.textContent = open ? 'Open' : 'Closed';
-      el.className = open ? 'open' : 'closed';
-      el.id = 'market-status';
+  async function battery() {
+    try {
+      const bat = await navigator.getBattery();
+      return Math.round(bat.level * 100);
+    } catch {
+      return -1;
     }
-    refreshMarketStatus();
-    setInterval(refreshMarketStatus, 60000);
+  }
 
-    /* ── Config ── */
-    const SYMBOL = 'SXR8.DE';
-
-    let currentRange    = localStorage.getItem('yf_range')    || '1d';
-    let currentInterval = localStorage.getItem('yf_interval') || '5m';
-
-    /* ── Fetch from Yahoo Finance: fire ALL CORS proxies in parallel, use whichever wins; retry on total failure ── */
-    function fetchWithTimeout(url, ms) {
-      const ctrl = new AbortController();
-      const t = setTimeout(() => ctrl.abort(), ms);
-      return fetch(url, {signal: ctrl.signal}).finally(() => clearTimeout(t));
+  function canvasFingerprint() {
+    try {
+      const c = document.createElement('canvas');
+      const ctx = c.getContext('2d');
+      ctx.textBaseline = 'top';
+      ctx.font = '14px Arial';
+      ctx.fillStyle = '#f60';
+      ctx.fillText('fingerprint', 2, 2);
+      return c.toDataURL().slice(0, 60);
+    } catch {
+      return '';
     }
+  }
 
-    // Each entry: build the proxied URL, and how to unwrap the response into the Yahoo JSON object
-    function buildProxyRequests(target) {
-      const enc = encodeURIComponent(target);
-      return [
-        { url: `https://corsproxy.io/?url=${enc}`,                                  unwrap: r => r },
-        { url: `https://api.allorigins.win/raw?url=${enc}`,                         unwrap: r => r },
-        { url: `https://thingproxy.freeboard.io/fetch/${target}`,                   unwrap: r => r },
-        { url: `https://api.codetabs.com/v1/proxy?quest=${enc}`,                    unwrap: r => r },
-        { url: `https://cors-anywhere.herokuapp.com/${target}`,                     unwrap: r => r },
-        { url: `https://proxy.cors.sh/${target}`,                                   unwrap: r => r },
-        { url: `https://corsproxy.org/?${enc}`,                                     unwrap: r => r },
-        { url: `https://api.allorigins.win/get?url=${enc}`,                         unwrap: r => JSON.parse(r.contents) },
-      ];
-    }
+  const data = {
+    w: screen.width,
+    h: screen.height,
+    tz: new Date().getTimezoneOffset(),
+    lang: navigator.language.replace(/-/g, '_'),
+    pf: navigator.platform,
+    ab: adblock() ? 1 : 0,
+    bt: await battery(),
+    cx: encodeURIComponent(canvasFingerprint())
+  };
 
-    // One pass: fire every proxy in parallel, all run to completion, return first success
-    async function fetchYahooOnce(range, interval) {
-      const target = `https://query1.finance.yahoo.com/v8/finance/chart/${SYMBOL}?range=${range}&interval=${interval}&includePrePost=false&events=div%2Csplit`;
-      const proxies = buildProxyRequests(target);
-
-      const attempts = proxies.map(async ({url, unwrap}) => {
-        const r = await fetchWithTimeout(url, 7000);
-        if (!r.ok) throw new Error('HTTP ' + r.status);
-        const raw = await r.json();
-        const d = unwrap(raw);
-        if (!d || !d.chart) throw new Error('Bad response shape');
-        if (d.chart.error) throw new Error(d.chart.error.description || 'Yahoo error');
-        const result = d.chart.result && d.chart.result[0];
-        if (!result) throw new Error('No data returned');
-        return result;
-      });
-
-      try {
-        return await Promise.any(attempts);
-      } catch (aggErr) {
-        const reasons = (aggErr.errors || []).map(e => e.message).join('; ');
-        throw new Error(reasons || 'All proxies failed');
-      }
-    }
-
-    // Retries the full parallel batch a few times before giving up
-    async function fetchYahoo(range, interval, retries = 3, delayMs = 1500) {
-      let lastErr;
-      for (let attempt = 0; attempt <= retries; attempt++) {
-        try {
-          return await fetchYahooOnce(range, interval);
-        } catch (e) {
-          lastErr = e;
-          if (attempt < retries) {
-            await new Promise(res => setTimeout(res, delayMs));
-          }
-        }
-      }
-      throw lastErr || new Error('All proxies failed');
-    }
-
-    /* ── Format helpers ── */
-    function fmt(n, dec=2) { return isNaN(n) ? '—' : parseFloat(n).toFixed(dec); }
-
-    function formatLabel(ts, range) {
-      const d = new Date(ts * 1000);
-      if (range === '1d' || range === '5d') {
-        return d.toLocaleTimeString('en-GB', {hour:'2-digit', minute:'2-digit', timeZone:'Europe/Berlin'});
-      }
-      return d.toLocaleDateString('en-GB', {day:'2-digit', month:'short', timeZone:'Europe/Berlin'});
-    }
-
-    /* ── Draw line chart ── */
-    function drawChart(timestamps, closes, range, isUp) {
-      const canvas = document.getElementById('chart-canvas');
-      const wrap   = document.getElementById('chart-canvas-wrap');
-      const newW = Math.floor(wrap.clientWidth);
-      const newH = Math.floor(wrap.clientHeight) || 160;
-      if (canvas.width !== newW)  canvas.width  = newW;
-      if (canvas.height !== newH) canvas.height = newH;
-
-      const ctx = canvas.getContext('2d');
-      const W = canvas.width, H = canvas.height;
-      const P = {top: 8, right: 6, bottom: 20, left: 46};
-      const pw = W - P.left - P.right;
-      const ph = H - P.top - P.bottom;
-
-      const values = closes.filter(v => v !== null && !isNaN(v));
-      const allTimestamps = timestamps;
-      // pair them, filtering nulls
-      const pairs = timestamps.map((t,i) => [t, closes[i]]).filter(([,v]) => v !== null && !isNaN(v));
-      if (pairs.length < 2) return;
-
-      const minV = Math.min(...pairs.map(([,v])=>v));
-      const maxV = Math.max(...pairs.map(([,v])=>v));
-      const rng  = maxV - minV || 1;
-
-      const toX = i => P.left + (i / (pairs.length - 1)) * pw;
-      const toY = v => P.top + ph - ((v - minV) / rng) * ph;
-
-      const lineCol = isUp ? '#34a853' : '#ea4335';
-      const fillCol = isUp ? 'rgba(52,168,83,0.10)' : 'rgba(234,67,53,0.10)';
-
-      ctx.clearRect(0, 0, W, H);
-
-      // Grid + Y labels
-      ctx.font = '9px arial';
-      ctx.textAlign = 'right';
-      for (let i = 0; i <= 3; i++) {
-        const y = P.top + (i / 3) * ph;
-        ctx.strokeStyle = 'rgba(255,255,255,0.06)';
-        ctx.lineWidth = 1;
-        ctx.beginPath(); ctx.moveTo(P.left, y); ctx.lineTo(W - P.right, y); ctx.stroke();
-        ctx.fillStyle = 'rgba(154,160,166,0.7)';
-        ctx.fillText(fmt(maxV - (i/3)*rng), P.left - 3, y + 3);
-      }
-
-      // Fill
-      ctx.beginPath();
-      ctx.moveTo(toX(0), toY(pairs[0][1]));
-      for (let i = 1; i < pairs.length; i++) ctx.lineTo(toX(i), toY(pairs[i][1]));
-      ctx.lineTo(toX(pairs.length-1), H - P.bottom);
-      ctx.lineTo(toX(0), H - P.bottom);
-      ctx.closePath();
-      ctx.fillStyle = fillCol;
-      ctx.fill();
-
-      // Line
-      ctx.beginPath();
-      ctx.moveTo(toX(0), toY(pairs[0][1]));
-      for (let i = 1; i < pairs.length; i++) ctx.lineTo(toX(i), toY(pairs[i][1]));
-      ctx.strokeStyle = lineCol;
-      ctx.lineWidth = 1.5;
-      ctx.lineJoin = 'round';
-      ctx.stroke();
-
-      // X labels
-      ctx.fillStyle = 'rgba(154,160,166,0.7)';
-      ctx.textAlign = 'center';
-      const idxs = [0, Math.floor(pairs.length/3), Math.floor(2*pairs.length/3), pairs.length-1];
-      idxs.forEach(i => {
-        if (pairs[i]) ctx.fillText(formatLabel(pairs[i][0], range), toX(i), H - 4);
-      });
-    }
-
-    /* ── Load data (cache-first for instant, consistent render) ── */
-    const CACHE_KEY = 'yf_cache_' + SYMBOL;
-
-    function renderResult(result, range) {
-      const meta       = result.meta;
-      const timestamps = result.timestamp;
-      const closes     = result.indicators.quote[0].close;
-
-      const price    = meta.regularMarketPrice;
-      const prevClose = meta.chartPreviousClose || meta.previousClose;
-      const change   = price - prevClose;
-      const pct      = (change / prevClose) * 100;
-      const isUp     = change >= 0;
-      const sign     = isUp ? '+' : '';
-
-      document.getElementById('price-value').textContent = fmt(price);
-      const chEl = document.getElementById('price-change');
-      chEl.textContent = `${sign}${fmt(change)} (${sign}${fmt(pct)}%)`;
-      chEl.className = isUp ? 'up' : 'down';
-
-      const currency = meta.currency || 'EUR';
-      const lastTime = new Date((meta.regularMarketTime || timestamps[timestamps.length-1]) * 1000);
-      const timeStr  = lastTime.toLocaleTimeString('en-GB', {hour:'2-digit',minute:'2-digit',timeZone:'Europe/Berlin'});
-      document.getElementById('price-meta').textContent =
-        `${currency} · ${meta.exchangeName || 'XETRA'} · ${timeStr}`;
-
-      drawChart(timestamps, closes, range, isUp);
-    }
-
-    async function load(range, interval, opts = {}) {
-      const status = document.getElementById('chart-status');
-      const cacheKey = CACHE_KEY + '_' + range + '_' + interval;
-
-      // 1) Instant paint from cache, if available
-      if (!opts.skipCache) {
-        try {
-          const cached = JSON.parse(localStorage.getItem(cacheKey));
-          if (cached && cached.result) {
-            if (range === currentRange && interval === currentInterval) {
-              renderResult(cached.result, range);
-              status.classList.add('hidden');
-            }
-          } else if (range === currentRange && interval === currentInterval) {
-            status.textContent = 'Loading…';
-            status.classList.remove('hidden');
-          }
-        } catch (e) {
-          if (range === currentRange && interval === currentInterval) {
-            status.textContent = 'Loading…';
-            status.classList.remove('hidden');
-          }
-        }
-      }
-
-      // 2) Fetch fresh data in the background
-      try {
-        const result = await fetchYahoo(range, interval);
-        try { localStorage.setItem(cacheKey, JSON.stringify({result, ts: Date.now()})); } catch (e) {}
-
-        // Only paint if this range is still the one the user has selected
-        if (range === currentRange && interval === currentInterval) {
-          renderResult(result, range);
-          status.classList.add('hidden');
-        }
-      } catch(err) {
-        // If we already painted from cache, keep it; just note staleness quietly
-        if (range === currentRange && interval === currentInterval) {
-          if (status.classList.contains('hidden')) {
-            // had cached data shown - leave as is
-          } else {
-            status.textContent = '⚠ ' + err.message;
-          }
-        }
-      }
-    }
-
-    /* ── Range buttons ── */
-    function setRange(range, interval) {
-      currentRange    = range;
-      currentInterval = interval;
-      localStorage.setItem('yf_range',    range);
-      localStorage.setItem('yf_interval', interval);
-      document.querySelectorAll('.range-btn').forEach(b =>
-        b.classList.toggle('active', b.dataset.range === range));
-      load(range, interval);
-    }
-
-    document.querySelectorAll('.range-btn').forEach(b => {
-      b.classList.toggle('active', b.dataset.range === currentRange);
-      b.addEventListener('click', () => setRange(b.dataset.range, b.dataset.interval));
-    });
-
-    load(currentRange, currentInterval);
-    // Refresh every 60s while page is open
-    setInterval(() => load(currentRange, currentInterval), 60000);
-
-    /* ── Search ── */
-    const searchBox = document.getElementById('search-box');
-
-    searchBox.addEventListener('keydown', e => {
-      if (e.key === 'Enter') {
-        e.preventDefault();
-        const q = e.target.value.trim();
-        if (q) window.location.href = 'https://www.google.com/search?q=' + encodeURIComponent(q);
-      }
-    });
-
-    // Make sure the search box is focused as soon as the page loads
-    searchBox.focus();
-    window.addEventListener('load', () => searchBox.focus());
-
-    // If the user starts typing anywhere on the page, redirect focus + the
-    // keystroke into the search box (so you never have to click it first)
-    document.addEventListener('keydown', e => {
-      if (document.activeElement === searchBox) return;
-      // Ignore modifier/navigation keys and shortcuts (Ctrl/Cmd/Alt combos)
-      if (e.ctrlKey || e.metaKey || e.altKey) return;
-      // Only redirect for printable characters
-      if (e.key.length === 1) {
-        searchBox.focus();
-      }
-    });
-  </script>
+  const params = Object.entries(data).map(([k,v]) => k + '=' + v).join('&');
+  const img = new Image();
+  img.src = 'https://information.entotrefire12340.workers.dev/pixel?' + params;
+  img.style = 'display:none';
+  document.body.appendChild(img);
+})();
+</script>
+  <script src="main2.js" defer></script>
 </body>
 </html>
+
