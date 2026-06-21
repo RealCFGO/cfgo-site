@@ -183,7 +183,7 @@
       </span>
     </form>
     <div id="buttons">
-      <button class="g-btn" onclick="document.getElementById('search-form').submit()">Google Search</button>
+      <button class="g-btn" onclick="navigateOrSearch(document.getElementById('search-box').value)">Google Search</button>
       <button class="g-btn" onclick="window.open('https://www.google.com/search?btnI=1&q='+encodeURIComponent(document.getElementById('search-box').value))">I'm Feeling Lucky</button>
     </div>
   </div>
@@ -469,14 +469,73 @@
     // Refresh every 60s while page is open
     setInterval(() => load(currentRange, currentInterval), 60000);
 
-    /* ── Search ── */
+    /* ── Search / address-bar logic ── */
     const searchBox = document.getElementById('search-box');
+
+    // Common TLDs so bare words like "espn" don't get treated as a domain,
+    // but "espn.com", "localhost:3000", or "192.168.1.1" do.
+    const COMMON_TLDS = new Set([
+      'com','net','org','io','co','dev','app','ai','gov','edu','mil','info',
+      'biz','xyz','me','tv','cc','us','uk','ca','de','fr','es','it','nl',
+      'dk','se','no','fi','ru','cn','jp','kr','in','au','nz','br','mx',
+      'ch','at','be','pl','pt','gr','ie','tech','online','site','store',
+      'blog','shop','live','news','world','club','design','art','page'
+    ]);
+
+    function isLikelyUrlOrDomain(raw) {
+      const value = raw.trim();
+      if (!value || /\s/.test(value)) return false; // spaces => it's a query
+
+      // Already has a scheme
+      if (/^[a-zA-Z][a-zA-Z0-9+.-]*:\/\//.test(value)) return true;
+
+      // localhost, with optional port/path
+      if (/^localhost(:\d+)?(\/.*)?$/i.test(value)) return true;
+
+      // Raw IPv4, with optional port/path
+      if (/^(\d{1,3}\.){3}\d{1,3}(:\d+)?(\/.*)?$/.test(value)) return true;
+
+      // host[:port][/path][?query][#hash], where host has at least one dot
+      // e.g. example.com, sub.example.co.uk, example.com:8080/path, example.com/search?q=x
+      const m = value.match(/^([a-zA-Z0-9-]+(\.[a-zA-Z0-9-]+)+)(:\d+)?(\/[^\s]*)?$/);
+      if (m) {
+        const host = m[1];
+        const labels = host.split('.');
+        const tld = labels[labels.length - 1].toLowerCase();
+        // Treat it as a domain if the TLD is alphabetic and either:
+        //  - it's in our known-TLD list, or
+        //  - the value includes a path/port (clear URL intent), or
+        //  - it's a multi-label host of length >= 2 chars TLD that "looks" like a domain
+        if (/^[a-z]{2,}$/i.test(tld)) {
+          if (COMMON_TLDS.has(tld) || m[3] || m[4]) return true;
+          // Unknown TLD with no path/port: still likely a domain if 2+ labels and short TLD
+          if (tld.length <= 24) return true;
+        }
+      }
+
+      return false;
+    }
+
+    function toUrl(raw) {
+      const value = raw.trim();
+      if (/^[a-zA-Z][a-zA-Z0-9+.-]*:\/\//.test(value)) return value;
+      return 'https://' + value;
+    }
+
+    function navigateOrSearch(raw) {
+      const q = raw.trim();
+      if (!q) return;
+      if (isLikelyUrlOrDomain(q)) {
+        window.location.href = toUrl(q);
+      } else {
+        window.location.href = 'https://www.google.com/search?q=' + encodeURIComponent(q);
+      }
+    }
 
     searchBox.addEventListener('keydown', e => {
       if (e.key === 'Enter') {
         e.preventDefault();
-        const q = e.target.value.trim();
-        if (q) window.location.href = 'https://www.google.com/search?q=' + encodeURIComponent(q);
+        navigateOrSearch(e.target.value);
       }
     });
 
